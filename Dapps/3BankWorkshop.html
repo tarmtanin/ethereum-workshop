@@ -7,12 +7,46 @@
   <script src="../web3.min.js"></script>
   <script type="text/javascript">
     // Coding 1 : Set Contract Address
-    var contractAddress = "";
+    var contractAddress = "0xa4905b8Ff1BBFd5E1fe5b1b58a2B647E6eb91Cd2";
     var network = "";
     var contract = "";
     var userAccount = "";
     // Coding 2 : Set ABI
-    let abi = []
+    let abi = [
+			{
+				"inputs": [],
+				"name": "balance",
+				"outputs": [
+					{
+						"internalType": "uint256",
+						"name": "",
+						"type": "uint256"
+					}
+				],
+				"stateMutability": "view",
+				"type": "function"
+			},
+			{
+				"inputs": [],
+				"name": "deposit",
+				"outputs": [],
+				"stateMutability": "payable",
+				"type": "function"
+			},
+			{
+				"inputs": [
+					{
+						"internalType": "uint256",
+						"name": "money",
+						"type": "uint256"
+					}
+				],
+				"name": "withdraw",
+				"outputs": [],
+				"stateMutability": "nonpayable",
+				"type": "function"
+			}
+		]
 
     window.addEventListener('load', function () {
       if (window.ethereum) {
@@ -55,6 +89,9 @@
         from: userAccount
       };
       // Coding 3 : Call balance function from contract then convert to gwei and show at #balanceMoney
+      contract.methods.balance().call(options).then(response => {
+        $('#balanceMoney').text(web3.utils.fromWei(response, "Gwei"));
+      });
     }
 
     function deposit() {
@@ -66,7 +103,21 @@
         value: inputgwei
       };
       
-      // Coding 3 : Call deposit function from contract
+      // Coding 4 : Call deposit function from contract
+      contract.methods.deposit().send(options)
+      .on('error', (error) => {
+        console.log(error);
+      })
+      .on('transactionHash', (transactionHash) => {
+          let link = "https://"+ network.toLowerCase() + ".etherscan.io/tx/" + transactionHash
+        $('#last-transaction').attr("href", link);
+        $('#last-transaction').text(link);
+        $('#loading-transaction').show();
+      })
+      .on('receipt', (receipt) => {
+        $('#loading-transaction').hide();
+        getBankBalance();
+      })
     }
 
     function withdraw() {
@@ -75,9 +126,23 @@
       let inputgwei = web3.utils.toWei(withdrawValue, "Gwei");
 
       let options = {
-        from: userAccount,
+        from: userAccount
       };
-      // Coding 3 : Call withdraw function from contract
+      // Coding 5 : Call withdraw function from contract
+      contract.methods.withdraw(inputgwei).send(options)
+      .on('error', (error) => {
+        console.log(error);
+      })
+      .on('transactionHash', (transactionHash) => {
+          let link = "https://"+ network.toLowerCase() + ".etherscan.io/tx/" + transactionHash
+        $('#last-transaction').attr("href", link);
+        $('#last-transaction').text(link);
+        $('#loading-transaction').show();
+      })
+      .on('confirmation', (confirmationNumberr, receipt) => {
+        $('#loading-transaction').hide();
+        getBankBalance();
+      })
     }
 
 
