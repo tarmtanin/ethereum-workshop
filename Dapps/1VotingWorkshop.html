@@ -7,15 +7,125 @@
   <script src="web3.min.js"></script>
   <script type="text/javascript">
     // Coding 1 : Set Contract Address
-    var contractAddress = "";
+    var contractAddress = "0xE73F131c4aC557FE716271835C98D4B088E24F44";
     var network = "";
     var contract;
+    var userAccount = "";
     // Coding 2 : Set ABI
-    let abi = []
+    let abi = [
+			{
+				"inputs": [],
+				"stateMutability": "nonpayable",
+				"type": "constructor"
+			},
+			{
+				"inputs": [],
+				"name": "checkLength",
+				"outputs": [
+					{
+						"internalType": "uint256",
+						"name": "",
+						"type": "uint256"
+					}
+				],
+				"stateMutability": "view",
+				"type": "function"
+			},
+			{
+				"inputs": [
+					{
+						"internalType": "string",
+						"name": "_title",
+						"type": "string"
+					}
+				],
+				"name": "createTitle",
+				"outputs": [],
+				"stateMutability": "nonpayable",
+				"type": "function"
+			},
+			{
+				"inputs": [],
+				"name": "owner",
+				"outputs": [
+					{
+						"internalType": "address",
+						"name": "",
+						"type": "address"
+					}
+				],
+				"stateMutability": "view",
+				"type": "function"
+			},
+			{
+				"inputs": [
+					{
+						"internalType": "uint256",
+						"name": "",
+						"type": "uint256"
+					}
+				],
+				"name": "title",
+				"outputs": [
+					{
+						"internalType": "string",
+						"name": "",
+						"type": "string"
+					}
+				],
+				"stateMutability": "view",
+				"type": "function"
+			},
+			{
+				"inputs": [
+					{
+						"internalType": "string",
+						"name": "_title",
+						"type": "string"
+					}
+				],
+				"name": "vote",
+				"outputs": [],
+				"stateMutability": "nonpayable",
+				"type": "function"
+			},
+			{
+				"inputs": [
+					{
+						"internalType": "string",
+						"name": "",
+						"type": "string"
+					}
+				],
+				"name": "votes",
+				"outputs": [
+					{
+						"internalType": "uint256",
+						"name": "",
+						"type": "uint256"
+					}
+				],
+				"stateMutability": "view",
+				"type": "function"
+			}
+		]
 
     window.addEventListener('load', function () {
       // Coding 3 : Connect MetaMask
       // With MetaMask
+      if(window.ethereum) {
+        web3 = new Web3(ethereum);
+        try {
+          ethereum.enable().then(result => {
+            startApp();
+          });
+        } catch (err) {
+          console.log(err);
+        }
+      } else {
+        web3 = new Web3(new Web3.providers.HttpProvider("https://rinkeby.infura.io/v3/5d8412dd045d479c948b85f0ec79c2e8"));
+        startApp();
+      }
 
       // Legacy dapp browsers
 
@@ -24,15 +134,23 @@
 
     function startApp() {
       // Coding 4 : Get network type and diplay on #network_name
+      web3.eth.net.getNetworkType().then(name => {
+        network = name;
+        $('#network_name').html(name);
+      });
       
       // Coding 5 : Get Wallet Address and diplay on #wallet-address
+      web3.eth.getAccounts().then(accounts => {
+        userAccount = accounts[0];
+        $('#wallet-address').text(userAccount);
+      });
 
       readData();
     }
 
     function getContract() {
       // Coding 6 : Get Contract from Ethereum Network
-      
+      return new web3.eth.Contract(abi, contractAddress);
     }
 
     function readData() {
@@ -40,6 +158,12 @@
 
       // Coding 7 : Call CheckLength Contract Function
       // After call will get length amount will loop and call prepareTable, displayData with index
+      contract.methods.checkLength().call().then(result => {
+        for (var i = 0; i < result; i++) {
+          prepareTable(i);
+          displayData(i);
+        }
+      });
 
     }
 
@@ -55,7 +179,12 @@
       let contract = getContract();
       // Coding 8 : Call title using index to get name and set to title_name_[index]
       // After call title success then call votes[name] to get vote count then set to vote_amount_[index]
-
+      contract.methods.title(index).call().then(name => {
+        $('#title_name_' + index).text(name);
+        contract.methods.votes(name).call().then(voteCount => {
+          $('#vote_amount_' + index).text(voteCount);
+        });
+      });
     }
 
     function vote(index) {
@@ -65,6 +194,26 @@
           // on Error
           // on Transaction In Progress
           // on Confirmation
+      contract.methods.title(index).call().then(name => {
+        let options = {
+          from: userAccount
+        }
+
+        contract.methods.vote(name).send(options)
+        .on('error', (error) => {
+          console.log(error);
+        })
+        .on('transactionHash', (transactionHash) => {
+          let link = "https://"+ network.toLowerCase() + ".etherscan.io/tx/" + transactionHash
+          $('#last-transaction').attr("href", link);
+          $('#last-transaction').text(link);
+          $('#loading-transaction').show();
+        })
+        .on('confirmation', (confirmationNumber, receipt) => {
+          displayData(index);
+          $('#loading-transaction').hide();
+        })
+      });
     }
 
   </script>

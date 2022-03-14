@@ -7,12 +7,88 @@
   <script src="../web3.min.js"></script>
   <script type="text/javascript">
     // Coding 1 : Set Contract Address
-    var contractAddress = "";
+    var contractAddress = "0x9785dF380c8BD6809d73b25034E6f4fA4b199eFF";
     var network = "";
     var contract = "";
     var userAccount = "";
     // Coding 2 : Set ABI
-    let abi = []
+    let abi = [
+			{
+				"inputs": [],
+				"stateMutability": "nonpayable",
+				"type": "constructor"
+			},
+			{
+				"anonymous": false,
+				"inputs": [
+					{
+						"indexed": false,
+						"internalType": "address",
+						"name": "user",
+						"type": "address"
+					},
+					{
+						"indexed": false,
+						"internalType": "uint8",
+						"name": "number",
+						"type": "uint8"
+					},
+					{
+						"indexed": false,
+						"internalType": "bool",
+						"name": "isCorrect",
+						"type": "bool"
+					}
+				],
+				"name": "GuessReceive",
+				"type": "event"
+			},
+			{
+				"inputs": [
+					{
+						"internalType": "uint8",
+						"name": "n",
+						"type": "uint8"
+					}
+				],
+				"name": "guess",
+				"outputs": [
+					{
+						"internalType": "bool",
+						"name": "",
+						"type": "bool"
+					}
+				],
+				"stateMutability": "payable",
+				"type": "function"
+			},
+			{
+				"inputs": [],
+				"name": "prizePool",
+				"outputs": [
+					{
+						"internalType": "uint256",
+						"name": "",
+						"type": "uint256"
+					}
+				],
+				"stateMutability": "view",
+				"type": "function"
+			},
+			{
+				"inputs": [
+					{
+						"internalType": "uint8",
+						"name": "n",
+						"type": "uint8"
+					}
+				],
+				"name": "setNumber",
+				"outputs": [],
+				"stateMutability": "nonpayable",
+				"type": "function"
+			}
+		]
 
     window.addEventListener('load', function () {
       if (window.ethereum) {
@@ -48,6 +124,9 @@
 
     function updatePrizePool() {
       // Coding 3 : Get prize pool from contract
+      web3.eth.getBalance(contractAddress).then(balance => {
+        $('#prize-pool').text(web3.utils.fromWei(balance, "ether"));
+      });
     }
 
     function setLottoNumber() {
@@ -57,6 +136,19 @@
       let options = {
         from: userAccount
       }
+      contract.methods.setNumber(number).send(options)
+      .on('error', (error) => {
+        console.log(error);
+      })
+      .on("transactionHash", (transactionHash) => {
+          let link = "https://"+ network.toLowerCase() + ".etherscan.io/tx/" + transactionHash
+          $('#last-transaction').attr("href", link);
+          $('#last-transaction').text(link);
+          $('#loading-transaction').show();
+      })
+      .on('confirmation', (confirmationNumber, receipt) => {
+          $('#loading-transaction').hide();
+      });
 
       // Coding 4 : Call contract to set number 
           // on Error
@@ -79,6 +171,27 @@
           // on Error
           // on Transaction In Progress
           // on Receipt (Update prize pool and show result if win prize then show #win-prize but lose show #lose-prize)
+
+      contract.methods.guess(number).send(options)
+      .on('error', (error) => {
+        console.log(error);
+      })
+      .on("transactionHash", (transactionHash) => {
+          let link = "https://"+ network.toLowerCase() + ".etherscan.io/tx/" + transactionHash
+          $('#last-transaction').attr("href", link);
+          $('#last-transaction').text(link);
+          $('#loading-transaction').show();
+      })
+      .on('receipt', (receipt) => {
+        console.log(receipt);
+        if(receipt.events.GuessReceive.returnValues['isCorrect']) {
+          $('#win-prize').show();
+        } else {
+          $('#lose-prize').show();
+        }
+          $('#loading-transaction').hide();
+          updatePrizePool();
+      });
     }
 
   </script>
