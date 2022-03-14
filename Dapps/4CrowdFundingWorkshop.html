@@ -58,6 +58,16 @@
       let contract = getContract();
       // Coding 4 : Get DonateEvent Data From Contract.
       // Then show events data in eventNumber,eventDonater,eventMoney id     
+      let count = 1;
+      contract.events.DonateEvent({
+        fromBlock: 0
+      }, function(error, event) {
+        console.log(event);
+        $('#eventNumber' + count).text("Event " + count + " :")
+        $('#eventDonator' + count).text("  Donator: " + event.returnValues[0])
+        $('#eventMoney' + count).text(";  Money: " + (event.returnValues[1] / 1000000000) + " Gwei ;")
+        count++;
+      });
     }
     function genEventData(number) {
       for (i = 1; i <= number; i++) {
