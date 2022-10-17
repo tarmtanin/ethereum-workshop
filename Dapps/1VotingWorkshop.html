@@ -1,0 +1,103 @@
+<!DOCTYPE html>
+<html>
+
+<head>
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/bulma/0.7.5/css/bulma.min.css">
+  <script src="https://ajax.googleapis.com/ajax/libs/jquery/3.3.1/jquery.min.js"></script>
+  <script src="web3.min.js"></script>
+  <script type="text/javascript">
+    // Coding 1 : Set Contract Address
+    let contractAddress = "";
+    let network = "";
+    let contract;
+    // Coding 2 : Set ABI
+    let abi = []
+
+    window.addEventListener('load', function () {
+      // Coding 3 : Connect MetaMask
+      // With MetaMask
+
+      // Legacy dapp browsers
+
+      // Fallback, need to declare provider such as Infura
+    });
+
+    function startApp() {
+      // Coding 4 : Get network type and diplay on #network_name
+      
+      // Coding 5 : Get Wallet Address and diplay on #wallet-address
+
+      readData();
+    }
+
+    function getContract() {
+      // Coding 6 : Get Contract from Ethereum Network
+      
+    }
+
+    function readData() {
+      let contract = getContract();
+
+      // Coding 7 : Call CheckLength Contract Function
+      // After call will get length amount will loop and call prepareTable, displayData with index
+
+    }
+
+    function prepareTable(index) {
+      let newTitle = $("#mock").clone();
+      $(newTitle).find(".mock_title").attr("id", "title_name_" + index);
+      $(newTitle).find(".mock_count").attr("id", "vote_amount_" + index);
+      $(newTitle).find(".mock_vote").attr("onClick", "javascript:vote(" + index + ");");
+      $(newTitle).appendTo("#vote_list");
+    }
+
+    function displayData(index) {
+      let contract = getContract();
+      // Coding 8 : Call title using index to get name and set to title_name_[index]
+      // After call title success then call votes[name] to get vote count then set to vote_amount_[index]
+
+    }
+
+    function vote(index) {
+      let contract = getContract();
+
+      // Coding 8 : Call Vote Contract Function
+          // on Error
+          // on Transaction In Progress
+          // on Confirmation
+    }
+
+  </script>
+</head>
+
+<body style="padding: 5px;">
+  <div class="block notification is-dark">
+    <div>Network: <span id="network_name"></span></div>
+    <div>Wallet Address: <span id="wallet-address"></span></div>
+    <div>
+      Last Transaction:
+      <a id="last-transaction"></a>
+      <progress style="display: none;" id="loading-transaction" class="progress is-small is-primary"
+        max="100">50%</progress>
+    </div>
+  </div>
+  <div id="vote_list">
+    <div class="columns notification is-info">
+      <div class="column">Name</div>
+      <div class="column">Count</div>
+      <div class="column">Vote</div>
+    </div>
+  </div>
+
+  <div style="display: none;">
+    <div id="mock">
+      <div class="columns">
+        <div class="column mock_title"></div>
+        <div class="column mock_count"></div>
+        <div class="column"><button class="button mock_vote is-info" onClick="">Vote</button></div>
+      </div>
+    </div>
+  </div>
+</body>
+
+</html>
