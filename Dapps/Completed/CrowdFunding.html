@@ -1,0 +1,270 @@
+<!DOCTYPE html>
+<html>
+
+<head>
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/bulma/0.7.5/css/bulma.min.css">
+  <script src="https://ajax.googleapis.com/ajax/libs/jquery/3.3.1/jquery.min.js"></script>
+  <script src="../web3.min.js"></script>
+  <script type="text/javascript">
+    let contractAddress = "0x5DF0A46a6B88cD5F0a5b9EFf2dCdC8dBD21EBA2A";
+    let network = "";
+    let contract = "";
+    let userAccount = "";
+    let abi = [
+      {
+        "inputs": [],
+        "stateMutability": "nonpayable",
+        "type": "constructor"
+      },
+      {
+        "anonymous": false,
+        "inputs": [
+          {
+            "indexed": false,
+            "internalType": "address",
+            "name": "donator",
+            "type": "address"
+          },
+          {
+            "indexed": false,
+            "internalType": "uint256",
+            "name": "money",
+            "type": "uint256"
+          }
+        ],
+        "name": "DonateEvent",
+        "type": "event"
+      },
+      {
+        "inputs": [],
+        "name": "balance",
+        "outputs": [
+          {
+            "internalType": "uint256",
+            "name": "",
+            "type": "uint256"
+          }
+        ],
+        "stateMutability": "view",
+        "type": "function"
+      },
+      {
+        "inputs": [],
+        "name": "donate",
+        "outputs": [],
+        "stateMutability": "payable",
+        "type": "function"
+      },
+      {
+        "inputs": [],
+        "name": "getFund",
+        "outputs": [],
+        "stateMutability": "nonpayable",
+        "type": "function"
+      },
+      {
+        "inputs": [],
+        "name": "owner",
+        "outputs": [
+          {
+            "internalType": "address",
+            "name": "",
+            "type": "address"
+          }
+        ],
+        "stateMutability": "view",
+        "type": "function"
+      }
+    ]
+
+    window.addEventListener('load', function () {
+      if (window.ethereum) {
+        web3 = new Web3(ethereum);
+        try {
+          ethereum.enable().then(result => {
+            startApp();
+          });
+        } catch (err) {
+          console.log(err);
+        }
+      }
+    });
+
+    function startApp() {
+      web3.eth.net.getNetworkType().then(name => {
+        network = name;
+        $("#network_name").html(name);
+      });
+      web3.eth.getAccounts().then(accounts => {
+        userAccount = accounts[0];
+        web3.eth.getBalance(accounts[0]).then(balance => {
+          $("#wallet-balance").text(web3.utils.fromWei(balance, "ether"));
+        });
+        $("#wallet-address").text(userAccount);
+      })
+      genEventData(10);
+      getBalance();
+      getEvent();
+    }
+
+    function getContract() {
+      return new web3.eth.Contract(abi, contractAddress);
+    }
+
+
+    function getBalance() {
+      let contract = getContract();
+      contract.methods.balance().call().then(response => {
+        $("#balanceMoney").text("" + (response / 1000000000));
+      });
+    }
+
+    function getEvent() {
+      let contract = getContract();
+      let count = 1;
+      contract.events.DonateEvent({
+        fromBlock: 0
+      }, function (error, event) {
+        console.log(event);
+
+        $("#eventNumber" + count).text("Event " + count + " :")
+        $("#eventDonator" + count).text("  Donator : " + event.returnValues[0])
+        $("#eventMoney" + count).text(";  Money : " + (event.returnValues[1] / 1000000000) + " Gwei ;")
+        count++;
+      });
+
+    }
+
+    function genEventData(number) {
+      for (i = 1; i <= number; i++) {
+        document.getElementById("eventData").insertAdjacentHTML("beforebegin",
+          "<div><span id=" + "eventNumber" + i + "></span><span id=" + "eventDonator" + i + "></span><span id=" + "eventMoney" + i + "></span></div>")
+      }
+
+    }
+
+    function donateMoney() {
+      let contract = getContract();
+      let depositValue = $("#deposite-number").val()
+      //1000000000 = 1 gwei
+      let inputgwei = 1000000000 * depositValue;
+      let options = {
+        from: userAccount,
+        value: inputgwei
+      };
+      contract.methods.donate().send(options)
+        .on('error', (error) => {
+          console.error(error)
+          $("#last-transaction").attr("href",)
+          $("#last-transaction").text("error")
+        })
+        .on('transactionHash', (transactionHash) => {
+          // Show tx hash
+          console.log(transactionHash)
+          let link = "https://exp-testnet.xchain.asia/tx/" + transactionHash
+          $("#last-transaction").attr("href", link)
+          $("#last-transaction").text(link)
+        })
+        .on('confirmation', (confirmationNumber, receipt) => {
+          getBalance();
+          console.log('confirmationNumber', confirmationNumber)
+          console.log(receipt);
+        })
+    }
+
+    function getFund() {
+      let contract = getContract();
+      let options = {
+        from: userAccount,
+      };
+      contract.methods.getFund().send(options)
+        .on('error', (error) => {
+          console.error(error)
+          $("#last-transaction").attr("href",)
+          $("#last-transaction").text("error")
+        })
+        .on('transactionHash', (transactionHash) => {
+          // Show tx hash
+          console.log(transactionHash)
+          let link = "https://exp-testnet.xchain.asia/tx/" + transactionHash
+          $("#last-transaction").attr("href", link)
+          $("#last-transaction").text(link)
+        })
+        .on('confirmation', (confirmationNumber, receipt) => {
+          console.log('confirmationNumber', confirmationNumber)
+          console.log(receipt);
+        })
+    }
+
+
+
+  </script>
+</head>
+
+<body style="padding: 5px;">
+  <div class="notification is-dark">
+    <div>Network: <span id="network_name"></span></div>
+    <div>Wallet Address: <span id="wallet-address"></span></div>
+    <div>Wallet Balance: <span id="wallet-balance"></span></div>
+    <div>
+      Last Transaction:
+      <a id="last-transaction"></a>
+      <progress style="display: none;" id="loading-transaction" class="progress is-small is-primary"
+        max="100">50%</progress>
+    </div>
+  </div>
+
+  <div class="notification is-dark">
+    <div class="columns">
+      <div class="column is-2">
+        <span>Balance :</span>
+      </div>
+      <div class="column is-2">
+        <h1 id="balanceMoney">0</h1>
+      </div>
+      <div class="column is-1">
+        <span>Gwei</span>
+      </div>
+      <div class="column is-1">
+        <button class="button is-small is-info" style="width:7em;" onClick="javascript:getBalance();">Get
+          Balance</button>
+      </div>
+    </div>
+    <div class="columns">
+      <div class="column is-2">
+        <span>Donate :</span>
+      </div>
+      <div class="column is-2">
+        <input id="deposite-number" class="input is-small" style="width:20em;" type="number" min="0"
+          placeholder="Input number" />
+      </div>
+      <div class="column is-1">
+        <span>Gwei</span>
+      </div>
+      <div class="column is-1">
+        <button class="button is-small is-warning" style="width:7em;"
+          onClick="javascript:donateMoney();">Donate</button>
+      </div>
+    </div>
+    <div class="columns">
+      <div class="column is-2">
+        <span>Owner Only :</span>
+      </div>
+      <div class="column is-1">
+        <button class="button is-small is-warning" style="width:7em;background-color: red;color: white;"
+          onClick="javascript:getFund();">Get Fund</button>
+      </div>
+    </div>
+  </div>
+  <p></p>
+  <div class="notification is-dark">
+    <div class="column is-1">
+      <button class="button is-small is-info" style="width:7em;" onClick="javascript:getEvent();">Get Event</button>
+    </div>
+    <div>
+      <div id="eventData"></div>
+    </div>
+  </div>
+</body>
+
+</html>
